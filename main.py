@@ -79,8 +79,8 @@ if __name__ == '__main__':
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
     for fold in range(n_splits):
-        train_data_filename = f"/home/code/Datasets/sepsis/train{Mode}/train_fold_{fold}_time.pkl"
-        val_data_filename = f"/home/code/Datasets/sepsis/train{Mode}/val_fold_{fold}_time.pkl"
+        train_data_filename = f""
+        val_data_filename = f""
 
         with open(train_data_filename, 'rb') as file:
             Xtrain, train_labels, _ = pickle.load(file)
@@ -104,13 +104,11 @@ if __name__ == '__main__':
         C_loss = CLoss()
         criterion = nn.BCELoss()
 
-        # 训练模型
         train_model(model, criterion, optimizer, Xtrain_resampled, train_labels_resampled,
                     epochs=num_round, criterion_2=C_loss, flag=flag)
 
-        # 测试模型
         scores = evaluate_model(model, Xval, val_labels)
-        labels = (scores > 0.5)
+        labels = (scores >= 0.5)
 
         auroc, auprc, accuracy, sensitivity, specificity, f_measure, PPV, CUI = evaluate_sepsis_score(val_labels,labels,scores)
         print("\nSet Results:")
@@ -157,7 +155,6 @@ if __name__ == '__main__':
     print(f"\n Average Val Set Results:")
     print(avg_results_str)
 
-    # 写入到文件
     with open("results.txt", "a+") as f:
         f.write(f"\n{name}:")
         f.write(avg_results_str)
