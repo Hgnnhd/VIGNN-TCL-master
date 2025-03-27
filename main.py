@@ -17,7 +17,6 @@ def train_model(model, criterion, optimizer, Xtrain, Ytrain, epochs=10, batch_si
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     losses = []
 
-    # 训练循环
     for epoch in tqdm(range(epochs)):
         model.train()
         epoch_loss = 0.0
