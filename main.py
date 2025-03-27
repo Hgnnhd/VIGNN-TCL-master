@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 from MODEL import *
 import numpy as np
-#加上时间戳
 import time
 import datetime
 
