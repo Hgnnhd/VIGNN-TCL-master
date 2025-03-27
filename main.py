@@ -15,13 +15,10 @@ import datetime
 
 def train_model(model, criterion, optimizer, Xtrain, Ytrain, epochs=10, batch_size=128, criterion_2=None, flag=False):
 
-    # 转换为Tensor并创建数据加载器
     train_data = TensorDataset(torch.tensor(Xtrain, dtype=torch.float32), torch.tensor(Ytrain, dtype=torch.float32))
     train_loader = DataLoader(train_data, batch_size=batch_size,shuffle=True)
-    # 初始化损失记录
     losses = []
-
-    # 训练循环
+    
     for epoch in tqdm(range(epochs)):
         model.train()
         epoch_loss = 0.0
@@ -35,8 +32,7 @@ def train_model(model, criterion, optimizer, Xtrain, Ytrain, epochs=10, batch_si
             if flag:
                 loss_2 = criterion_2(h1, h2)
                 loss = loss + loss_2 / (loss + loss_2).detach()
-
-
+                
             loss.backward()
             optimizer.step()
 
@@ -44,12 +40,9 @@ def train_model(model, criterion, optimizer, Xtrain, Ytrain, epochs=10, batch_si
 
         losses.append(epoch_loss)
 def evaluate_model(model, Xtest, Ytest, batch_size=1024):
-    # 将模型设置为评估模式
-    # # 准备测试数据
     test_data = TensorDataset(torch.tensor(Xtest, dtype=torch.float32), torch.tensor(Ytest, dtype=torch.float32))
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
     model.eval()
-    # 收集模型预测
     all_predictions = []
     with torch.no_grad():
         for X_batch, _ in tqdm(test_loader, desc="Collecting predictions"):
@@ -62,12 +55,12 @@ def evaluate_model(model, Xtest, Ytest, batch_size=1024):
 
 
 if __name__ == '__main__':
-    gpu_id = 4 # 选择GPU设备
+    gpu_id = 0
     if torch.cuda.is_available():
-        device = torch.device("cuda:{}".format(gpu_id))  # 选择GPU设备
+        device = torch.device("cuda:{}".format(gpu_id)) 
     else:
-        device = torch.device("cpu")  # 如果没有可用的GPU，选择CPU设备
-    set_seed(42)  # 可以选择任何喜欢的数字作为种子
+        device = torch.device("cpu")
+    set_seed(42) 
     Mode = "" # dataset name
     input_directory = ""
     output_directory = ""
@@ -81,7 +74,6 @@ if __name__ == '__main__':
     best_auc = -np.inf
     best_model_state = None
     fold_performances = []
-    # 初始化各个部分的评估指标
     total_auroc, total_auprc, total_accuracy, total_sensitivity, total_specificity, total_f_measure,total_ppv,total_cui = 0, 0, 0, 0, 0,0,0,0
     list_auroc, list_auprc, list_accuracy, list_sensitivity, list_specificity, list_f_measure, list_ppv, list_cui = [], [], [], [], [], [],[],[]
 
@@ -122,18 +114,16 @@ if __name__ == '__main__':
         labels = (scores > 0.5)
 
         auroc, auprc, accuracy, sensitivity, specificity, f_measure, PPV, CUI = evaluate_sepsis_score(val_labels,labels,scores)
-        # 打印验证集结果
         print("\nSet Results:")
         print(
             f"AUROC: {auroc}, AUPRC: {auprc}, F1: {f_measure}, PPV:{PPV}, CUI:{CUI}, Accuracy: {accuracy}, Sensitivity: {sensitivity}, Specificity: {specificity}")
-
-        # 将数字乘以100表示百分比
+        
         auroc, auprc, accuracy, sensitivity, specificity, f_measure, PPV, CUI = [x * 100 for x in
                                                                                  [auroc, auprc, accuracy,
                                                                                   sensitivity, specificity,
                                                                                   f_measure, PPV, CUI]]
 
-        # 累加结果
+
         total_auroc += auroc
         total_auprc += auprc
         total_accuracy += accuracy
@@ -143,7 +133,7 @@ if __name__ == '__main__':
         total_ppv += PPV
         total_cui += CUI
 
-        # 添加到列表
+
         list_auroc.append(auroc)
         list_auprc.append(auprc)
         list_accuracy.append(accuracy)
@@ -153,7 +143,7 @@ if __name__ == '__main__':
         list_ppv.append(PPV)
         list_cui.append(CUI)
 
-    # 计算平均值和标准差
+
     avg_metrics = [total_auroc, total_auprc, total_accuracy, total_sensitivity, total_specificity, total_f_measure,
                    total_ppv, total_cui]
     avg_metrics = [x / n_splits for x in avg_metrics]
@@ -161,7 +151,6 @@ if __name__ == '__main__':
                    [list_auroc, list_auprc, list_accuracy, list_sensitivity, list_specificity, list_f_measure,
                     list_ppv, list_cui]]
 
-    # 格式化结果字符串
     metric_names = ["AUROC", "AUPRC", "Accuracy", "Sensitivity", "Specificity", "F1", "PPV", "CUI"]
     avg_results_str = ", ".join([f"Average {name}: {avg:.2f} ± {std:.2f}" for name, avg, std in
                                  zip(metric_names, avg_metrics, std_metrics)])
