@@ -78,7 +78,6 @@ class VIGNN_TCL(nn.Module):
         self.weight1_var = nn.Parameter(torch.randn(input_dim, 1))
         self.weight2_var = nn.Parameter(torch.randn(1, input_dim))
 
-        # 全连接层
         self.fc = nn.Linear(hidden_dim, 1)
         self.fc_att = nn.Linear(hidden_dim, 1)
         self.fc_var = nn.Linear(input_dim, hidden_dim)
@@ -92,7 +91,6 @@ class VIGNN_TCL(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        # 使用Xavier初始化全连接层的权重
         nn.init.xavier_normal_(self.fc.weight)
         nn.init.constant_(self.fc.bias, 0.0)
         nn.init.xavier_uniform_(self.weights)
