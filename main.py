@@ -7,7 +7,6 @@ from model import *
 from utils import *
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
-from MODEL import *
 import numpy as np
 import time
 import datetime
