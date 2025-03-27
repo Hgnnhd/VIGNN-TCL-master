@@ -169,13 +169,9 @@ class CLoss(nn.Module):
         return loss
 
     def forward(self,z1, z2):
-        d = 0
+        
         loss = torch.tensor(0.0).to(z1.device)
-        while z1.size(1) > 1:
-            d += 1
-            loss += self.instance_contrastive_loss_mixup(z1, z2)
-            z1 = F.max_pool1d(z1.transpose(1,2), kernel_size=2).transpose(1,2)
-            z2 = F.max_pool1d(z2.transpose(1,2), kernel_size=2).transpose(1,2)
+        loss += self.instance_contrastive_loss_mixup(z1, z2)
 
         return loss
 
