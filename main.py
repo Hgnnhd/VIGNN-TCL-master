@@ -11,32 +11,34 @@ import numpy as np
 import time
 import datetime
 
-def train_model(model, criterion, optimizer, Xtrain, Ytrain, epochs=10, batch_size=128, criterion_2=None, flag=False):
+def train_model(model, criterion, optimizer, Xtrain, Ytrain, epochs=10, batch_size=128, criterion_2=None, flag=False,alpha=0.5):
 
     train_data = TensorDataset(torch.tensor(Xtrain, dtype=torch.float32), torch.tensor(Ytrain, dtype=torch.float32))
-    train_loader = DataLoader(train_data, batch_size=batch_size,shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     losses = []
-    
+
+    # 训练循环
     for epoch in tqdm(range(epochs)):
         model.train()
         epoch_loss = 0.0
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             optimizer.zero_grad()
-            outputs,h1,h2 = model(X_batch)
+            outputs, h1, h2, adj_weight = model(X_batch)
             outputs = outputs.view(-1)
             loss = criterion(outputs, y_batch)
 
             if flag:
                 loss_2 = criterion_2(h1, h2)
-                loss = loss + loss_2 / (loss + loss_2).detach()
-                
+                loss = (alpha * loss) + (1-alpha) * loss_2
+
             loss.backward()
             optimizer.step()
 
             epoch_loss += loss.item()
 
         losses.append(epoch_loss)
+        
 def evaluate_model(model, Xtest, Ytest, batch_size=1024):
     test_data = TensorDataset(torch.tensor(Xtest, dtype=torch.float32), torch.tensor(Ytest, dtype=torch.float32))
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
@@ -67,7 +69,7 @@ if __name__ == '__main__':
     num_round = 50
     rank = 0
     ratio = 0.3
-
+    alpha = 0.8
 
     best_auc = -np.inf
     best_model_state = None
@@ -104,8 +106,8 @@ if __name__ == '__main__':
         criterion = nn.BCELoss()
 
         train_model(model, criterion, optimizer, Xtrain_resampled, train_labels_resampled,
-                    epochs=num_round, criterion_2=C_loss, flag=flag)
-
+                        epochs=num_round, criterion_2=C_loss, flag=flag,alpha=alpha)
+        
         scores = evaluate_model(model, Xval, val_labels)
         labels = (scores >= 0.5)
 
