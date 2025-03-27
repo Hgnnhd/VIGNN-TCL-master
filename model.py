@@ -1,9 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.nn.utils import weight_norm
-from torch_geometric.nn import GCNConv,GATConv,ChebConv,HypergraphConv,GMMConv,GPSConv,GatedGraphConv,GraphSAGE,GraphUNet
-from torch_geometric.nn import SetTransformerAggregation,TGNMemory,TopKPooling
-from torch_geometric.utils import to_undirected
 import torch_geometric
 import torch.fft as fft
 import math
@@ -12,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import pywt
-from torch_geometric.nn import GCNConv, GATConv
 from MODEL.NAM import LinReLU, ExU
 from torch.distributions.normal import Normal
 import tensorly
@@ -58,14 +53,11 @@ class FourierTransform(nn.Module):
         super(FourierTransform, self).__init__()
 
     def forward(self, x):
-        # 假设输入 x 的维度为 (batch_size, sequence_length, input_dim)
-        # 对每个时间步进行傅里叶变换
         x = x.unsqueeze(-1)
-        # 构造复数张量，实部为原始数据，虚部为零
         x_complex = torch.cat((x, torch.zeros_like(x)), dim=-1)
         x_complex = torch.view_as_complex(x_complex)
         x_complex = x_complex.to(torch.complex64)
-        x_fft = fft.fftn(x_complex, dim=-2)  # 在时域维度进行傅里叶变换
+        x_fft = fft.fftn(x_complex, dim=-2)  
         return x_fft.to(torch.float32)
 
 
@@ -130,7 +122,6 @@ class VIGNN_TCL(nn.Module):
 
         # Prepare for batch processing
         x_reshaped = x.permute(0, 2, 1)  # Shape: (B, num_var, T)
-        # 高效的批量矩阵乘法和加法
         x_var_t = torch.einsum('bvt,vht->bvh', x_reshaped, self.weights) + self.biases.unsqueeze(0)
         x_var_t = torch.relu(x_var_t)
 
@@ -150,11 +141,10 @@ class VIGNN_TCL(nn.Module):
         x_var_t , _ = self.lstm(x, (h0, c0)) #B,T,V
         x_var_fft , _ = self.lstm(x_fft, (h0, c0)) # B,T,V
 
-        x_var_t = self.fc_var(x_var_t)
+        x_var_t = x_var_t[:,-1,:]
 
         lstm_out = x_var_fft + graph_out
 
-        # # 拼接多层LSTM的输出
         lstm_out = self.dropout(lstm_out)
         lstm_out = self.fc(lstm_out)
         lstm_out = self.sigmoid(lstm_out)
@@ -165,8 +155,7 @@ class CLoss(nn.Module):
     def __init__(self,):
         super(CLoss, self).__init__()
 
-    def instance_contrastive_loss_mixup(self, z1, z2, temp=1, eps=1e-8):
-
+    def contrastive_loss(self, z1, z2, temp=1, eps=1e-8):
         B,T,D = z1.size()
         uni_z1 = z1[torch.randperm(z1.shape[0]), :, :].view(z1.size())
         uni_z2 = z2[torch.randperm(z2.shape[0]), :, :].view(z2.size())
